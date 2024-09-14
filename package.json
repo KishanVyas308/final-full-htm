@@ -1,0 +1,16 @@
+{
+  "name": "02-gov-frontend",
+  "version": "1.0.0",
+  "main": "index.js",
+  "scripts": {
+    "dev": "concurrently \"npm run dev --prefix Gov-Dashbord\" \"npm run dev --prefix Groww-Organization-Dashbord\" \"npm run dev --prefix User-Dashbord\" \"node ./Grow-Backend/index.js\" ", 
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "description": "",
+  "devDependencies": {
+    "concurrently": "^9.0.1"
+  }
+}
