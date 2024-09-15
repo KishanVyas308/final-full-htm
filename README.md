@@ -12,6 +12,8 @@ The traditional way of using KYC takes 1-2 days for verification and is centrali
 ![WhatsApp Image 2024-09-15 at 12 53 45_b628175a](https://github.com/user-attachments/assets/4421142b-3050-4ce2-984e-a607cbfd4846)
 ![WhatsApp Image 2024-09-15 at 12 55 31_391eb855](https://github.com/user-attachments/assets/c7683dcd-f1f0-4445-b11f-d837be595521)
 ![WhatsApp Image 2024-09-15 at 12 56 22_448332ca](https://github.com/user-attachments/assets/fc2a65d0-8378-4d96-9c6e-dfb88328fb7b)
+![image](https://github.com/user-attachments/assets/6b9c36b2-7102-4e1c-92b5-87afbe1f564f)
+
 
 ## Use of SBT
 We use SBT (Soul-Bound Tokens) for identity issuance. SBTs are non-transferable NFTs that represent an individual's identity, ensuring it cannot be stolen or lost.
