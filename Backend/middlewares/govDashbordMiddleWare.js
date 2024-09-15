@@ -1,12 +1,14 @@
-import { GOV_DASHBOARD_FRONTEND_SITE, JWT_SECREAT } from "../config.js";
+import { GOV_DASHBOARD_FRONTEND_SITE, GOV_DASHBOARD_FRONTEND_SITE2, JWT_SECREAT } from "../config.js";
 import jwt from "jsonwebtoken";
 
 export function checkOriginForGovDashboard(req, res, next) {
   const allowedOrigin = GOV_DASHBOARD_FRONTEND_SITE; // Remove trailing slash
+  const allowedOrigin2 = GOV_DASHBOARD_FRONTEND_SITE2; // Remove trailing slash
+
 
   const origin = req.get("Origin") || req.get("Referer");
 
-  if (origin && origin.startsWith(allowedOrigin)) {
+  if (origin && origin.startsWith(allowedOrigin) || origin.startsWith(allowedOrigin2)) {
     next();
   } else {
     return res.status(403).json({ message: "Access denied from this origin" });

@@ -8,15 +8,16 @@ import {
 import { wallet } from "../config.js";
 import fs from "fs";
 import crypto from "crypto";
-import * as circomlibjs from 'circomlibjs';
+import * as circomlibjs from "circomlibjs";
 import * as snarkjs from "snarkjs";
+import { ReportABI, ReportAddress } from "../Constant.js";
 
 export async function verifyAndCheckUserFromOrganization(req, res) {
   const { walletAddress } = req.body;
 
   try {
     if (walletAddress.toLowerCase()) {
-      const data = await checkKyc(walletAddress);
+      const data = await checkKyc(walletAddress, res);
 
       return res.json({ isAuthorized: data });
     } else {
@@ -51,8 +52,7 @@ async function checkKyc(address) {
 
   //return console.log(address, orginalDoB, currentTimestamp, ageThreshold,orginalUID,name);
 
-  const currentTimestamp = Math.floor(Date.now() / 1000);
-  const ageThreshold = 18 * 365 * 24 * 60 * 60; // Example: 18 years in seconds
+  const ageThreshold = 18; // Example: 18 years
   console.log("Creating age proof...");
 
   name = ethers.utils.sha256(ethers.utils.toUtf8Bytes(name));
@@ -60,24 +60,59 @@ async function checkKyc(address) {
   const { proof, publicSignals } = await createAgeProof(
     address,
     orginalDoB,
-    currentTimestamp,
     ageThreshold,
     orginalUID,
     name
   );
+
+  if (proof == null || publicSignals == null) {
+    return false;
+  }
+
   console.log("Proof:", proof);
   console.log("Public Signals:", publicSignals);
 
   console.log("Verifying age proof...");
   const verificationResult = await verifyAgeProof(proof, publicSignals);
-  console.log("Verification Result:", verificationResult);
-  return verificationResult;
+
+  // Create a contract instance
+  const repContract = new ethers.Contract(ReportAddress, ReportABI, wallet);
+  const rep = await repContract.fetchDocuments(address);
+
+  let repproof;
+  let reppublicSignals;
+  console.log("Report length: ", rep);
+  
+  if (rep != null) {
+    const data = await createNegNftProof(rep.length);
+    repproof = data.repproof;
+    reppublicSignals = data.reppublicSignals;
+  }
+  else {
+    const data = await createNegNftProof(0);
+    repproof = data.repproof;
+    reppublicSignals = data.reppublicSignals;
+  }
+  const repRes = await verifyNegNftProof(repproof, reppublicSignals);
+
+  //! --------------------
+  let result = false;
+  if (reppublicSignals[0] == "0") {
+    result = false;
+  } else {
+    result = true;
+  }
+
+  if (verificationResult && result && repRes) {
+    return true;
+  } else {
+    return false;
+  }
 }
 
 async function createAgeProof(
   address,
   doBTimestamp,
-  currentTimestamp,
   ageThreshold,
   uid,
   name
@@ -88,25 +123,32 @@ async function createAgeProof(
   console.log([address, doBTimestamp, uid, name]);
   console.log("wieniec");
   // Generate zk-SNARK proof and public signals
-  const { proof, publicSignals } = await snarkjs.groth16.fullProve(
-    {
-      doBTimestamp: doBTimestamp,
-      address: address,
-      currentTimestamp: currentTimestamp,
-      ageThreshold: ageThreshold,
-      hash: hash,
-      uid: uid,
-      name: name,
-    },
-    "../Backend/controllers/age_proof.wasm",
-    "../Backend/controllers/circuit_age.zkey"
-  );
-  return { proof, publicSignals };
+
+  try {
+    const { proof, publicSignals } = await snarkjs.groth16.fullProve(
+      {
+        address: address,
+        doBTimestamp: doBTimestamp,
+        ageThreshold: ageThreshold,
+        hash: hash,
+        uid: uid,
+        name: name,
+      },
+      "../Backend/controllers/age_proof.wasm",
+      "../Backend/controllers/circuit_age.zkey"
+    );
+
+    return { proof, publicSignals };
+  } catch (error) {
+    return { proof: null, publicSignals: null };
+  }
 }
 
 async function verifyAgeProof(proof, publicSignals) {
   // Load the verification key for the zk-SNARK circuit
-  const vKey = JSON.parse(fs.readFileSync("../Backend/controllers/verification_key_age.json"));
+  const vKey = JSON.parse(
+    fs.readFileSync("../Backend/controllers/verification_key_age.json")
+  );
 
   // // Verify the zk-SNARK proof using snarkjs
   const res = await snarkjs.groth16.verify(vKey, publicSignals, proof);
@@ -139,3 +181,27 @@ async function poseidonHash(inputs) {
   const poseidonHash = poseidon.F.toString(poseidon(inputs));
   return poseidonHash;
 }
+
+async function createNegNftProof(length) {
+  const { proof, publicSignals } = await snarkjs.groth16.fullProve(
+    {
+      x: length,
+    },
+    "../Backend/controllers/negative_nft.wasm",
+    "../Backend/controllers/circuit_neg_nft.zkey"
+  );
+  return { repproof: proof, reppublicSignals: publicSignals };
+}
+
+async function verifyNegNftProof(proof, publicSignals) {
+  // Load the verification key for the zk-SNARK circuit
+  const vKey = JSON.parse(
+    fs.readFileSync("../Backend/controllers/verification_key_neg_nft.json")
+  );
+  // // Verify the zk-SNARK proof using snarkjs
+  const repRes = await snarkjs.groth16.verify(vKey, publicSignals, proof);
+
+  return repRes;
+}
+
+//! MPC function

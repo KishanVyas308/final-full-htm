@@ -7,6 +7,7 @@ import {
 } from "../../Identity-Blockchain-Zk-snarks-main/Constant.js";
 import { encryptString, JWT_SECREAT, wallet } from "../config.js";
 import jwt from "jsonwebtoken";
+import { ReportABI, ReportAddress } from "../Constant.js";
 
 export function login(req, res) {
   const { id, password } = req.body;
@@ -26,9 +27,8 @@ export async function addUser(req, res) {
   const { name, dob, adharId, address } = req.body;
   // const address = "0x7cfbf495bf66c26C73867B221c4301ef6463570d";
   if (name && dob && adharId && address) {
-
     console.log(name, dob, adharId, address);
-    
+
     // Create contract instance
     const authContract = new ethers.Contract(
       AuthContractAddress,
@@ -41,12 +41,12 @@ export async function addUser(req, res) {
     // // Call authUser to assign an auth key to the user
     const authUserTra = await authContract.authUser(address); // no need to store this in `res` since it doesn't return anything
     console.log("step 2");
-    
+
     authUserTra.wait();
     console.log("step 3");
 
-    const diffDof = dateDiff(dob);
-    console.log(name, parseInt(diffDof), adharId, address )
+    const diffDof = calculateAgeDifference(dob);
+    console.log(name, diffDof, adharId, address);
     // Get the auth key for the user
     const key = await authContract.getAuthKey(address);
     console.log("sjdhbwfk"); // Await the result from the contract call
@@ -55,7 +55,7 @@ export async function addUser(req, res) {
     // const decrptedData = decryptStringArray(encryptedData, key);
 
     const enName = encryptString(name, key);
-    const enDoB = encryptString((parseInt(diffDof)).toString(), key);
+    const enDoB = encryptString(parseInt(diffDof).toString(), key);
     const enUid = encryptString(adharId, key);
 
     //console.log("Encrypted Data: ", encryptedData);
@@ -87,16 +87,51 @@ export async function addUser(req, res) {
   }
 }
 
-function dateDiff(dateString) {
-  // Convert the input string to a Date object
-  const date = new Date(dateString);
-
-  // Get the current date
+function calculateAgeDifference(dob) {
   const currentDate = new Date();
 
-  // Calculate the difference between the two dates in milliseconds
-  const diffInMs = currentDate.getTime() - date.getTime();
+  // Convert both dates to Date objects
+  const dobDate = new Date(dob);
+  const current = new Date(currentDate);
 
-  // Convert the difference to seconds
-  return Math.abs(diffInMs / 1000);
+  // Extract year, month, and day for both dates
+  let years = current.getFullYear() - dobDate.getFullYear();
+  let months = current.getMonth() - dobDate.getMonth();
+  let days = current.getDate() - dobDate.getDate();
+
+  // Adjust if the current month and day is before the birth month and day
+  if (months < 0 || (months === 0 && days < 0)) {
+    years--; // Subtract 1 year
+    months += 12; // Add 12 to months
+  }
+
+  // If days are negative, adjust by reducing months and recalculating days
+  if (days < 0) {
+    months--;
+    const previousMonth =
+      current.getMonth() === 0 ? 11 : current.getMonth() - 1;
+    const daysInPreviousMonth = new Date(
+      current.getFullYear(),
+      previousMonth + 1,
+      0
+    ).getDate();
+    days += daysInPreviousMonth;
+  }
+
+  return years;
+}
+
+export async function negativeMint(req, res) {
+  const { to, subject, description, company } = req.body;
+  // Create a contract instance
+  const repContract = new ethers.Contract(ReportAddress, ReportABI, wallet);
+  const mint = await repContract.negativeMint(
+    to,
+    subject,
+    description,
+    company
+  );
+  await mint.wait();
+  console.log("Minting Done");
+  return res.json({ message: "Minting Done" });
 }

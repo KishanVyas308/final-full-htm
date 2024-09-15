@@ -9,6 +9,7 @@ export const JWT_SECREAT = "jwt_secret";
 export const USER_DASHBOARD_FRONTEND_SITE = "http://localhost:4321";
 export const GROW_BACKEND_SITE = "http://localhost:3000";
 export const GOV_DASHBOARD_FRONTEND_SITE = "http://localhost:5173";
+export const GOV_DASHBOARD_FRONTEND_SITE2 = "http://localhost:5174";
 export const GROW_API_KEY = "grow_api_key";
 
 

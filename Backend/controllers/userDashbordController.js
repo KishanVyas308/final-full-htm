@@ -45,6 +45,8 @@ export async function verifyAndGetUserData(req, res) {
 
       const { name, dob, adharId, walletAddress } = await getData(address);
 
+      
+
       res.json({
         name: name,
         dob: dob,
