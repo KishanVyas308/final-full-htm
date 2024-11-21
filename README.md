@@ -3,7 +3,7 @@
 This project demonstrates a secure single-click identity verification system using zk-SNARKs and MPC. The system utilizes JavaScript, Solidity, and Circom to provide a seamless and private identity verification experience.
 
 # System Design
-![image](https://github.com/user-attachments/assets/ca82e617-0c14-4225-afcb-54c08e30141e)
+<img src="https://github.com/user-attachments/assets/ca82e617-0c14-4225-afcb-54c08e30141e" style="height: 500px;">
 
 
 # Components
